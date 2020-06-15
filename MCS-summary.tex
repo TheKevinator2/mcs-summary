@@ -1,0 +1,1238 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}{Corollary}[theorem]
+\newtheorem{proposition}{Proposition}[theorem]
+\let\iff\Leftrightarrow
+\author{Kevin Sun}
+\title{MCS-summary}
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+\section{Chapter 2}
+\subsection{Derived semantical concepts: formal definitions}
+$T$ is \textit{satisfiable} or \textit{consistent} if at least one structure satisfies $T$. \\
+
+\noindent
+$T$ is \textit{contradictory} or \textit{unsatisfiable} if there is no structure that satisfies $T$.\\
+
+\noindent
+$T$ is \textit{tautological} or \textit{logically valid} (notation $\models T$) if $T$ is satisfied in every $\Sigma$-structure. \\
+
+\noindent
+$T$ is \textit{logically equivalent} to $T'$ (notation $T \equiv T'$) if $T,T'$ are true in the same structures. Or, equivalently, if for each structure $\mathfrak{A}$ over $\Sigma$, $T^\mathfrak{A} = {T'}^\mathfrak{A}$. \\
+
+\noindent
+$T$ \textit{logically entails (or logically implies)} $T'$ (notation $T \models T'$) if every structure $\mathfrak{A}$ that satisfies $T$ satisfies $T'$. \\
+
+\noindent
+$T$ contains \textit{complete knowledge} if it has only one model. Such a theory is called \textit{categorical}. Otherwise, a theory contains \textit{incomplete knowledge}.
+
+\subsection{Inference problems}
+\begin{itemize}
+	\item The evaluation inference problem: 
+		\begin{itemize}
+			\item Input: a $\Sigma$-structure $\mathfrak{A}$, and term or expression or theory $e$ over $\Sigma$
+			\item Output: $e^\mathfrak{A}$
+		\end{itemize}
+		If $e$ is a boolean expression, the outcome is \textbf{t} if $e$ is satisfied in $\mathfrak{A}$ and \textbf{f} otherwise.
+	\item The validity checking inference problem: 
+		\begin{itemize}
+			\item Input: theory $T$
+			\item Output: $e^\mathfrak{A}$
+		\end{itemize}
+		Logically valid means tautological.
+	\item The satisfiability checking inference problem: 
+		\begin{itemize}
+			\item Input: theory $T$
+			\item Output: \textbf{t} if $T$ is satisfiable, \textbf{f} otherwise
+		\end{itemize}
+	\item The model generation inference problem: 
+		\begin{itemize}
+			\item Input: theory $T$
+			\item Output: the set of models of $T$. This is the set $\{\mathfrak{A} \mid \mathfrak{A} \models T\}$.
+		\end{itemize}
+	\item The deduction inference problem: 
+		\begin{itemize}
+			\item Input: theory $T$, boolean expression $e$
+			\item Output: \textbf{t} if $T$ logically entails $e$, \textbf{f} otherwise
+		\end{itemize}
+		Theory $T$ entails expression $e$ if every structure $\mathfrak{A}
+		$ that satisfies $T$ satisfies $e$ as well. Formally, $\{\mathfrak{A} \mid \mathfrak{A} \models T\} \subseteq \{\mathfrak{A} \mid \mathfrak{A} \models e \}$
+\end{itemize}
+
+\section{Chapter 4}
+
+\subsection{Lightweight verification by finite model generation}
+
+\paragraph{The verification problem} This problem consists of verifying if a property is entailed by the formal specification (an \textit{emergent} property). A kind of property to be verified is called an \textit{invariant}. It is a property about a snapshot in time, and the goal is to prove that it is true at each instant of time.
+	
+However, proving such an emergent property is a non-trivial deductive inference problem. For this reason, Alloy focuses on simpler forms of reasoning based on finite model generation. It does not prove emergent properties from the specification. Instead it is used to find errors in specifications.
+
+\paragraph{Guided simulation} Beside searching for bugs in a specification, there are many other uses
+of finite model generation to explore a LTC theory:
+\begin{itemize}
+	\item Find an ”execution” that violates a desired invariant.
+	\item Simulate the dynamic system by generating models.
+	\item Check if a given sequence of actions is possible, and if so, what the states are at different time points.
+	
+\end{itemize}
+\subsection{LTC modelling of programs}
+
+A program is a specification of dynamic processes. Variables are inertial dynamic functions. A function \textit{CurrPP} specifies the current program points. Program instructions modify variables and program points. \textit{CurrPP} is not really inertial.
+
+\subsubsection{Applications of lightweight verification of programs}
+Simultaneously look at the running example introduced at the bottom of page 121 in the course notes for a more clear read.
+
+
+\paragraph{Lightweight verification} Add an axiom expressing that the program does not satisfy the intended postcondition and apply a finite model generator. If a model is found, the program is certainly not correct. If no model is found, we cannot yet be sure that the program is correct. However, our confidence has grown.
+
+\paragraph{Generation of test values} Testing is the most common method for verifying correctness. To find useful and sufficiently exhaustive test-input is important, difficult and time consuming. Experience shows that many errors are caused by the fact that certain execution flows of the program were not taken into account. Generating a test value for a given chosen control flow is done by generating a constraint on the execution flow. \textit{CurPP(t)} is a function that returns the current program point. The following expresses that at point 2 it must go along P4 and at point 5 it must go along P3 (it is implicit that P3 and P4 are e.g. different clauses in an if-statement.)  $$CurPP(2) = P4 \land CurPP(5) = P3$$
+
+\paragraph{Searching for infinite loops} Consider the following proposition: $$m(0) = m(3) \land n(0) = n(3)$$ Notice that 0 is the start and 3 is the time after the first iteration. Suppose that IDP finds a model of the theory and this proposition, for a time interval with at least 4 time points. What such a model tell us is that there exists an input value for m and n for which the program loops.
+
+
+\subsection{Heavyweight verification of invariants}
+
+To verify an invariant , one must verify that the theory $T$ satisfies the invariant at every point in time. This could be done using a theorem prover. However $T$ contains the interpreted type \texttt{T} interpreted by $\mathbb{N}$. Thus, theorem provers should be able to reason about the natural numbers. This means they must have a theory of natural numbers. Peano's FO arithmetic must be used as no good automated SO provers exist. We will use the induction schema $Ind(\varphi[t])$ to prove invariants $\varphi[t]$.
+
+$$Ind(\varphi[t]) \equiv \varphi[0] \land \forall t(\varphi[t] \Rightarrow \varphi[S(t)]) \Rightarrow \forall t \varphi[t]$$
+
+This method is applicable to bi-state LTC theories. 
+
+\begin{definition} 
+An LTC theory is a \textit{bi-state LTC theory} if it has the following form: $$T_a = T_{static} \cup T_0 \cup T_s \cup T_t$$ where
+\begin{itemize}
+	\item $T_{static}$ is an FO(.) theory of the static symbols,
+	\item $T_0$ is a set of initial state expressions,
+	\item $T_s$ consists of single state expressions $\forall t \varphi[t]$ or definitions consisting of single state rules,
+	\item $T_t$ consists of bi-state formulas and definitions consisting of bi-state rules.
+\end{itemize}
+$T_s$ includes action preconditions and no-concurrency or simultaneity axioms and may include fluent definitions which consist of single state rules. $T_t$ includes the definition of fluents by frame rules and of causality predicates.
+\end{definition}
+
+\begin{definition}
+Given any single state or bi-state theory $T$ and numeral $n$. The theory denoted $T[n]$ consists of expressions $\varphi[n]$ (rule or FO axiom) for each expression $\forall t \varphi[t]$ in $T$. Explained in another way, $T[n]$ is obtained by dropping quantifiers $\forall t$ and substituting $n$ for $t$ in formulas and rules.
+\end{definition}
+
+\subsubsection{The verification method}
+
+\begin{itemize}
+	\item Input:
+	\begin{itemize}
+		\item a bi-state LTC-theory $T_a = T_{static} \cup T_0 \cup T_s \cup T_t$
+		\item a single state formula $\psi = \varphi[t]$
+	\end{itemize}
+	\item First, we construct the following theories:
+		\begin{itemize}
+			\item $T_{init} = T_{static} \cup T_0 \cup T_s[0]$
+			\item $T_{ind} = T_{static} \cup T_s[0] \cup T_s[1] \cup T_t[0] \cup \{\varphi[0]\}$
+		\end{itemize}
+	\item We use a theorem prover to verify:
+		\begin{itemize}
+			\item $T_{init} \models \varphi[0]$
+			\item $T_{ind} \models \varphi[1]$
+		\end{itemize}
+	\item If both calls succeed, then return that $\varphi[t]$ is an invariant of $T_a$, otherwise report failure.
+\end{itemize}
+
+If $T_{init} \models \varphi[0]$, then also $T_a \models \varphi[0]$, since $T_a \models T_init$. This establishes the base case of the induction proof. 
+
+$T_{ind}$ relates any two successive poitins in time, as it has no initial state information ($T_0$ is not present in the definition of $T_{ind}$). Therefore, if $T_{ind} \models \varphi[1]$, then it follows that: $$T_a \models \forall t (\varphi[t] \Rightarrow \varphi [S(t)]).$$ This establishes the induction step of the proof.
+
+If both calls to the theorem prover succeed, it holds that: 
+\begin{itemize}
+	\item $T_a \models \varphi[0]$
+	\item $T_a \models \forall t (\varphi[t] \Rightarrow \varphi [S(t)])$
+\end{itemize}
+Combining this with $Ind(\varphi[t])$, we can conclude that: $$T_a \models \forall t \varphi(t)$$
+
+Proof of method:
+
+\begin{theorem}
+If $T_{init} \models \varphi[0]$ and $T_{ind} \models \varphi[1]$, then $T_a \models \forall t \varphi[t]$
+\end{theorem}
+
+\textit{Proof.} $Ind(\varphi[t]) \coloneqq \varphi[0] \land \forall t(\varphi[t] \Rightarrow \varphi[S(t)]) \Rightarrow \forall t \varphi[t]$ \\
+
+$T_a \models Ind(\varphi[t])$, because \texttt{T} is the interpreted type $\mathbb{N}$ for which all induction schema instances hold. \\
+
+$T_a \models \varphi[0]$, because $T_{init} \models \varphi[0]$ and $T_a \models T_{init}$\\
+
+Since $T_{ind} \models \varphi[1]$, the following holds:
+\begin{itemize}
+	\item Then $T_{static} \cup T_s[0] \cup T_s[S(0)] \cup T_t[0] \cup \{\varphi[0]\} \models \varphi[S(0)]$ \\
+	
+	(Use of definition of $T_{ind}$ and $1$ can be expressed as the successor of $0$, $1 = S(0)$)
+	\item Then $T_{static} \cup T_s \cup T_t \models \varphi[0] \Rightarrow \varphi[S(0)]$\\
+	
+	(The theory $T[n]$ is a subset of the theory T it is based on. Anything entailed by $T[n]$ is also entailed by $T$.)	
+	\item Then $T_{static} \cup T_s \cup T_t \models \forall t (\varphi[t] \Rightarrow \varphi[S(t)])$\\
+	
+	($0$ does not occur in $T_{static} \cup T_s \cup T_t$. In classical logic, if $T \models \varphi[c]$, and $c$ is a constant that does not occur in $T$, then $T \models \forall x \varphi[x]$)
+	\item Then $T_a \models \forall t (\varphi[t] \Rightarrow \varphi [S(t)]).$ \\
+	
+	($T_a \models T_{static} \cup T_s \cup T_t$)
+\end{itemize}
+
+The application of $Ind(\varphi[t])$ yields that $T_a \models \forall t \varphi[t].$
+
+\subsubsection{Limitations of the verification method}
+
+\paragraph{Incomplete method} The method is not complete. There are two cases where it may fail to prove the invariance of an invariant:
+\begin{itemize} 
+	\item If the invariants are not sufficiently strong:  It may be that a set of invariants $\forall t \varphi[t]$ are mutually dependent on each other. It might be impossible to prove the invariance of each in isolation of the others. This means the method reports a failure, but the property could be a still be an invariant. 
+	\item If there are other integer-valued types. E.g., for proving correctness of a program with integer-valued variables (such as the GCD program). In that case, other instances of the induction schema are needed to prove properties of these integer valued types and relations.
+\end{itemize}
+
+\subsection{Progression inference}
+
+\begin{definition}
+Given an LTC-vocabulary $\Sigma_a$, we define its state vocabulary $\Sigma^s_a$ as the set of
+symbols obtained from $\Sigma_a$ by dropping all time arguments.
+\end{definition}
+
+A finite sequence $S$ of these structures correspond to a structure that includes time arguments bounded by the length of $S$. This correspondence holds for infinite sequences and a sequence where \texttt{T} = $\mathbb{N}$
+
+\begin{definition}
+\textit{Progression inference} is the problem:
+\begin{itemize}
+	\item Input: a bi-state LTC theory $T_a$ over LTC vocabulary $\Sigma_a$ and a $\Sigma^s_a$-structure $\mathfrak{A}^s_i$ 
+	\item Output: a $\Sigma^s_a$-structure $\mathfrak{A}^s_o$ such that $\langle \mathfrak{A}^s_i , \mathfrak{A}^s_o \rangle$ corresponds to a model $\mathfrak{A}$ of $T_a$ with $Time^\mathfrak{A} = \{0,1\}$
+\end{itemize}
+\end{definition}
+
+\paragraph{An application of progression: interactive simulation} By iteratively applying progression inference, systems can be simulated with or without interaction.
+
+Algorithm: 
+\begin{enumerate}
+	\item Generate a set of initial states allowed by the theory state axioms and the initial state axioms. 
+	\item Loop:
+		Let the user select a state from the given set of states.
+		Set the selected state as “current state”.
+		Apply progression inference on “current state”.
+		Present possible successor states to the user.
+		Go to 2.
+
+\end{enumerate}
+
+
+\section{Chapter 5}
+
+\subsection{LTL}
+\subsubsection{Syntax of LTL}
+\begin{definition}
+The syntax of LTL-sentences (over $\Sigma$) is defined by the following BNF (Backus Naur form):
+
+\begin{gather*}
+\varphi \Coloneqq
+\begin{cases}
+	\bot \mid \top \mid p \text{ } (\text{where } p \in \Sigma) \mid \\
+	(\lnot \varphi) \mid (\varphi \lor \varphi) \mid (\varphi \land \varphi) \mid (\varphi \Rightarrow \varphi) \mid \\
+	(\text{X}\varphi) \mid (\text{F}\varphi) \mid (\text{G}\varphi) \mid (\varphi \text{U} \varphi) \mid (\varphi \text{W} \varphi) \mid (\varphi \text{R} \varphi)
+\end{cases}
+\end{gather*}
+\end{definition}
+
+
+\paragraph{Informal semantics of LTL connectives} An LTL formula is evaluated in a path of a transition structure $\mathcal{M}$.
+
+\begin{itemize}
+	\item $\bot$: false, $\top$: true
+	\item (X$\phi$): $\phi$ is true in the \textit{neXt} state;
+	\item (F$\phi$): $\phi$ is true in some \textit{Future} state, starting from now;
+	\item (G$\phi$): $\phi$ is \textit{Globally} true, i.e. in all future states of the path, starting from now;
+	\item ($\psi$ U $\phi$): $\psi$ is true \textit{Until} $\phi$ becomes true. More precisely, in some future state starting from now, $\phi$ is true and in all preceding states starting from now, $\psi$ is true in the current state. This expression is satisfied in a path in which $\phi$ is true in the first state.
+	\item ($\psi$ W $\phi$): \textit{Weak-Until}: the same as U, except that it is satisfied as well if $\psi$ remains true forever.
+	\item ($\psi$ R $\phi$): $\psi$ \textit{Releases} $\phi$: $\phi$ is true at least until in a current or future state in which $\psi$ is true.
+\end{itemize}
+
+\paragraph{Binding conventions of LTL}
+\begin{itemize}
+	\item Unary connectives bind most tightly
+	\item Then in order: U,R,W,$\land, \lor, \Rightarrow.$
+\end{itemize}
+
+\subsubsection{Formal semantics of LTL}
+
+\begin{definition}
+Given $\mathcal{M} = \langle S, \rightarrow, L \rangle$ over $\Sigma$. Let $\pi = s_0 \rightarrow \ldots$ be a path in $\mathcal{M}$ and $\varphi$ and LTL formula over $\Sigma$.
+
+\begin{itemize}
+	\item $\mathcal{M}, \pi \models \top$ (and $\pi  \not\models \top$)
+	\item $\mathcal{M}, \pi \models p \text{ if } p \in L(s_0)$
+	\item the normal rules for logical connectives $\lnot, \land, \lor, \Rightarrow$ \\
+	 E.g. $\mathcal{M}, \pi \models \psi \Rightarrow \varphi \text{ if } \mathcal{M}, \pi \models \varphi \text{ or } \mathcal{M}, \pi \not\models \psi$
+	 \item $\mathcal{M}, \pi \models \text{X}\varphi \text{ if } \mathcal{M}, \pi^1 \models \varphi$
+	 \item $\mathcal{M}, \pi \models \text{G}\varphi \text{ if, for all } i \geq 0, \mathcal{M}, \pi^i \models \varphi$
+	 \item $\mathcal{M}, \pi \models \text{F}\varphi \text{ if, for some } i \geq 0, \mathcal{M}, \pi^i \models \varphi$
+	 \item $\mathcal{M}, \pi \models \psi \text{ U }\varphi \text{ if there exists } i \geq 0 \text{ such that } \mathcal{M}, \pi^i \models \varphi \text{ and for all } j = 0,\dots,i-1, \mathcal{M}, \pi^j \models \psi$
+	 \item $\mathcal{M}, \pi \models \psi \text{ W }\varphi \text{ if }$
+	 \begin{itemize}
+	 	\item either there exists $i \geq 0$ such that $\mathcal{M}, \pi^i \models \varphi$ and for all $j = 0,\dots,i-1, \mathcal{M}, \pi^j \models \psi$
+	 	\item or for all $j \geq 0, \mathcal{M}, \pi^j \models \psi$
+	 \end{itemize}
+	 \item $\mathcal{M}, \pi \models \psi \text{ R }\varphi \text{ if }$
+	 \begin{itemize}
+	 	\item either there exists $i \geq 0$ such that $\mathcal{M}, \pi^i \models \psi$ and for all $j = 0,\dots,i, \mathcal{M}, \pi^j \models \varphi$
+	 	\item or for all $j \geq 0, \mathcal{M}, \pi^j \models \varphi$
+	 \end{itemize} 
+\end{itemize}
+\end{definition}
+
+\begin{definition}\label{def:defLTLs}
+$\mathcal{M}, s \models \varphi$ if for each path $\pi = s \rightarrow \dots $ in $ \mathcal{M} $ starting in $s$, it holds that $ \mathcal{M}, \pi \models \varphi$.
+\end{definition}
+
+\subsubsection{Other stuff}
+
+\paragraph{Propositions that cannot be expressed in LTL}
+
+\begin{itemize}
+	\item Statements that there exists a path to some state, or equivalently, that it is \textit{possible} to reach a certain state. E.g. in any state, it is \textit{possible} to get to a \textit{ready} state.
+	\item More in general, statements expressing that there is a path satisfying certain properties. E.g. The lift could remain on the third floor with its doors closed forever.
+\end{itemize}
+CTL is required to express this sort of properties.
+
+
+\begin{definition}
+Two LTL formulas $\varphi, \psi$ are equivalent (written $\varphi \equiv \psi$), if for all transition structures $\mathcal{M}$ and all paths $\pi$ in $\mathcal{M}$, it holds that $\mathcal{M}, \pi \models \varphi$ iff $ \mathcal{M}, \pi \models \psi$.
+\end{definition}
+
+\paragraph{Duality} All connectives and operators have a dual connective or operator. E.g., $\land$ and $\lor$ are called dual, since $\lnot (\psi \land \varphi) \equiv \lnot \psi \lor \lnot \varphi$, and $\lnot ( \psi \lor \varphi) \equiv \lnot \psi \land \lnot \varphi $. Similarly, temporal operators have a dual operator:
+
+\begin{itemize}
+	\item $\lnot \text{X} \phi \equiv \text{X} \lnot \phi$: X is self-dual
+	\item $\lnot \text{G} \phi \equiv \text{F} \lnot \phi$, $\lnot \text{F} \phi \equiv \text{G} \lnot \phi$
+	\item $\lnot (\phi \text{U} \psi) \equiv \lnot \phi \text{R} \lnot \psi$, $\lnot (\phi \text{R} \psi) \equiv \lnot \phi \text{U} \lnot \psi$
+\end{itemize}
+
+Other useful equivalences are as follows:
+
+\begin{itemize}
+	\item $\text{F} \phi \equiv \top \text{U} \phi$, $\text{G} \phi \equiv \bot \text{R} \phi$, $\text{G} \phi \equiv \phi \text{W} \bot$
+	\item $\phi \text{U} \psi \equiv \phi \text{W} \psi \land \text{F} \psi$
+	\item $\phi \text{W} \psi \equiv \phi \text{U} \psi \lor \text{G} \phi$
+	\item $\phi \text{W} \psi \equiv \psi \text{R} (\psi \lor \phi)$
+	\item $\phi \text{R} \psi \equiv \psi \text{W} (\phi \land \psi)$
+\end{itemize}
+
+It follows from these equivalences that every temporal connective operator except X can be expressed in terms of U. In turn, U can be expressed in terms of W as well as in terms of R. It follows that all temporal connectives can be written in terms of those operators as well.
+
+\paragraph{Adequate sets of LTL connectives} Each of the following sets is called an \textit{adequate set of LTL connectives}:
+\begin{center}
+\{U, X\}, \{R, X\}, \{W, X\}
+\end{center}
+
+\subsection{Fairness constraints}
+
+\begin{definition}
+A path $\pi$ is fair with respect to some proposition $\varphi$ if there are infinitely many $i \in \mathbb{N}$ such that $\pi^i \models \varphi$.
+\end{definition}
+
+\subsection{CTL*}
+
+\subsubsection{Syntax of CTL*}
+\begin{definition}
+We define \textit{state formulas} and \textit{path formulas} over vocabulary $\Sigma$ by mutual induction using the following BNF:
+\begin{itemize}
+	\item State formulas $\varphi$
+\begin{gather*}
+\varphi \Coloneqq
+\begin{cases}
+	\bot \mid \top \mid p \text{ } (\text{where } p \in \Sigma) \mid \\
+	(\lnot \varphi) \mid (\varphi \lor \varphi) \mid (\varphi \land \varphi) \mid (\varphi \Rightarrow \varphi) \mid \\
+	\text{A}[\alpha] \mid \text{E}[\alpha]
+\end{cases}
+\end{gather*}
+\end{itemize}
+\begin{itemize}
+	\item Path formulas $\alpha$
+\begin{gather*}
+\alpha \Coloneqq
+\begin{cases}
+	\varphi \\
+	(\lnot \alpha) \mid (\alpha \lor \alpha) \mid (\alpha \land \alpha) \mid (\alpha \Rightarrow \alpha) \mid \\
+	(\text{X}\alpha) \mid (\text{F}\alpha) \mid (\text{G}\alpha) \mid \\
+	(\alpha \text{U} \alpha) \mid (\alpha \text{W} \alpha) \mid (\alpha \text{R} \alpha)
+\end{cases}
+\end{gather*}
+\end{itemize}
+\end{definition}
+
+\paragraph{Binding priorities for CTL*}
+\begin{itemize}
+	\item First unary connectives: $\lnot$,X,F,G,A,E;
+	\item Then, in order: U,R,W,$\land, \lor, \Rightarrow$
+\end{itemize}
+
+\subsubsection{Semantics of CTL*}
+
+We define the satisfaction relation for state formulas and path formulas by mutual induction on the structure of formulas:
+
+\begin{itemize}
+	\item State formulas for each state $s$ and state formula $\varphi$, we define $\mathcal{M}, s \models \varphi$:
+	\begin{itemize}
+		\item the standard rules for $\bot, \top, \text{atoms}, \lnot, \land, \lor, \Rightarrow$;
+		\item $\mathcal{M}, s \models \text{A}[\alpha]$ if for each path $\pi = s \rightarrow \dots$ in $\mathcal{M}$, it holds that $\mathcal{M}, \pi \models \alpha$
+		\item $\mathcal{M}, s \models \text{E}[\alpha]$ if for some path $\pi = s \rightarrow \dots$ in $\mathcal{M}$, it holds that $\mathcal{M}, \pi \models \alpha$
+	\end{itemize}
+	
+	\item Path formulas for each path $\pi = s_0 \rightarrow \dots$ and path formula $\alpha$, we define $\mathcal{M}, \pi \models \alpha$:
+	\begin{itemize}
+		\item the standard rules for $\lnot, \land, \lor, \Rightarrow$;
+		\item the LTL rules for X,F,G,U,W,R
+		\item if $\varphi$ is a state formula: $\mathcal{M}, \pi \models \varphi$ if $\mathcal{M}, s_0 \models \varphi$
+	\end{itemize}
+\end{itemize}
+
+\begin{definition}
+Two path formulas are equivalent if they are satisfied in the same transition structures $\mathcal{M}$ and paths $\pi$. Two state formulas are equivalent if they are satisfied in the same transition structures $\mathcal{M}$ and states $s$.
+\end{definition}
+
+\paragraph{Dualities and LTL-equivalences:}
+
+\begin{itemize}
+	\item $\text{A}[\alpha] \equiv \lnot \text{E}[\lnot\alpha]$
+	\item $\text{F}[\alpha] \equiv \lnot \text{G}\lnot\alpha$
+	\item $\alpha\text{R}\beta \equiv \lnot (\lnot\alpha\text{U}\lnot\beta)$
+	\item $\alpha\text{W}\beta \equiv \alpha\text{U}\beta \lor \text{G} \alpha$
+\end{itemize}
+
+\paragraph{Embedding LTL in CTL*}
+
+Syntactically, any CTL* path formula without A,E is an LTL formula. An LTL formula $\alpha$ is evaluated in a path. The corresponding CTL* path formula is $\alpha$ itself. When using LTL formulas as path formulas, the universal path quantifier is used implicitly. In CTL*, this quantifier is to be explicated. See Definition \ref{def:defLTLs} if unclear.
+
+\subsection{CTL}
+
+\subsubsection{Syntax of CTL}
+
+CTL-formula’s are CTL* state formulas in which all temporal connectives come in pairs:
+
+\begin{definition}
+The syntax of CTL-sentences (over $\Sigma$) is defined by the following BNF (Backus Naur form):
+
+\begin{gather*}
+\varphi \Coloneqq
+\begin{cases}
+	\bot \mid \top \mid p \text{ } (\text{where } p \in \Sigma) \mid \\
+	(\lnot \varphi) \mid (\varphi \lor \varphi) \mid (\varphi \land \varphi) \mid (\varphi \Rightarrow \varphi) \mid \\
+	(\text{AX}\varphi) \mid (\text{EX}\varphi) \mid (\text{AF}\varphi) \mid (\text{EF}\varphi) \mid (\text{AG}\varphi) \mid (\text{EG}\varphi) \mid \\
+	 (\text{A}[\varphi \text{U} \varphi)]) \mid (\text{E}[\varphi \text{U} \varphi)])
+\end{cases}
+\end{gather*}
+\end{definition}
+
+Each CTL-formula is a CTL*-\textit{state formula}.
+
+\subsubsection{Informal semantics of CTL} Expressions are evaluated in some node $s$ of the tree:
+
+\begin{itemize}
+	\item AX$\varphi$: for each path from $s$, $\varphi$ holds in the next state; \\
+	 i.e., in all next states, $\varphi$ holds
+	\item EX$\varphi$: in some path from $s$, $\varphi$ holds in the next state; \\
+	 i.e., in some next state, $\varphi$ holds
+	\item AF$\varphi$: each path goes through a state in which $\varphi$ is true;
+	\item EF$\varphi$: some path goes through a state in which $\varphi$ is true; \\
+	 i.e., $\varphi$ is true in some state equal to or reachable from $s$
+	\item AG$\varphi$: in each path, $\varphi$ is true in all states; \\
+	 i.e., $\varphi$ is true in all states equal to or reachable from $s$
+	 \item EG$\varphi$: in some path, $\varphi$ is true in all states;
+	 \item A[$\alpha \text{U}\varphi$]: in each path, $\alpha \text{U}\varphi$ is true;
+	 \item E[$\alpha \text{U}\varphi$]: in some path, $\alpha \text{U}\varphi$ is true;
+\end{itemize}
+
+\subsubsection{Formulas expressible in 1, but not the other (LTL and CTL)}
+
+\begin{itemize}
+	\item In its normal state, a process can always request to enter its critical section: (use $n_i \text{: process $i$ is in \textit{normal} state, } t_i \text{: process $i$ is applying for its critical section, } c_i$) 
+	\begin{itemize}
+		\item CTL: AG$(n_1 \Rightarrow \text{EX} t_1)$
+		\item LTL: not expressible in LTL
+	\end{itemize}
+	\item If the process is enabled infinitely often, then it runs infinitely often: (use \textit{enabled}, \textit{running})
+	\begin{itemize}
+		\item LTL: GF \textit{enabled} $\Rightarrow$ GF \textit{running}
+		\item CTL: not expressible in CTL
+	\end{itemize}
+\end{itemize}
+
+\begin{definition}
+We call $\mathcal{M}'$ a substructure of $\mathcal{M}$ if it is obtained by reducing edges and/or nodes from $\mathcal{M}$.
+\end{definition}
+
+\begin{theorem}
+\textit{Let $\varphi$ be a CTL or CTL* formula such that there exists a transition structure $\mathcal{M}$ with substructure $\mathcal{M}'$ and a state s such that $\mathcal{M}$, s $\models \varphi$ and $\mathcal{M}'$, s $\models \varphi$. Then $\varphi$ is not expressible as an LTL formula.}
+\end{theorem}
+
+To show that AG EF $p$ is not expressible in LTL, it suffices to find a structure in which it is satisfied but not in a substructure. See course notes for proof (currently page 161).
+
+\begin{itemize}
+	\item A formula $\psi_1 \in CTL \setminus LTL$: AG EF $p$.
+	\item $\psi_2 \in CTL \cap LTL:$
+	\begin{itemize}
+		\item CTL: AG ($p \Rightarrow AF q$)
+		\item LTL: G ($p \Rightarrow F q$)
+	\end{itemize}
+	\item $\psi_3 \in LTL \setminus CTL: \text{GF} r \Rightarrow \text{F} a$ (proof omitted in course notes). It means that in all paths in which $r$ is infinitely often true, then $a$ will be satisfied. This is a useful form of fairness: infinitely often requested ($r$) implies eventually acknowledged ($a$).
+	\item $\psi_4 \in CTL^* \setminus (LTL \cup CTL)$: E[GF$p$] (proof omitted in the course notes). This means that there is a path with infinitely many $p$’s.
+
+\end{itemize}
+
+\subsubsection{Other stuff}
+
+\paragraph{Useful equivalences of CTL}
+\begin{itemize}
+	\item AX $\psi \equiv \lnot \text{EX} \lnot \psi$
+	\item EG $\psi \equiv \lnot \text{AF} \lnot \psi$
+	\item AG $\psi \equiv \lnot \text{EF} \lnot \psi$
+	\item EF $\psi \equiv \text{E}[ \top \text{U} \psi]$
+	\item $\text{A}[\psi \text{U} \varphi] \equiv \lnot( \text{E}[ \lnot \varphi \text{U} (\lnot \psi \land \lnot \varphi)] \lor \text{EG} \lnot \varphi)$
+\end{itemize}
+
+\paragraph{Adequate sets of CTL connectives}
+A set of temporal connectives in CTL is adequate (i.e., suffices to express all CTL formulas) iff it contains one of \{AX, EX\} , at least one of \{EG, AF, AU\} and EU.
+
+\section{Chapter 6}
+
+\begin{definition}
+Refinement is the process of adding details to a modelling of a dynamic system, in such a way that the newly added information does not contradict what was already specified in the modelling. A refinement step links one abstract modelling to a more concrete modelling.
+\end{definition}
+
+\begin{definition}
+A proof obligation for \textit{invariant preservation} for an event $e$ and invariant $i$ takes the following form: $$\forall s,s',x: A \land I(s) \land H_e(x,s) \land T_e(x,s,s') \Rightarrow I_i(s')$$ where
+
+\begin{itemize}
+	\item $A$ is the set of static axioms on constants and sets in the context associated with the machine;
+	\item $I(s)$ is the conjunction of all invariants of the machine at state $s$;
+	\item $H_e$ is the guard of event $e$;
+	\item $T_e(s,s')$  is the bistate formula expressing that state $s'$ results from $s$ by applying the actions of $e$;
+	\item $i$ is the invariant, $I_i(s')$ states that $i$ is true in $s'$;
+	\item $x$ represents the event parameter(s).
+\end{itemize}
+
+Note that this is the same idea as the verification method for proving invariants from bistate LTC theories.
+\end{definition}
+
+\begin{definition}
+The \textit{guard strengthening condition} for an event $e$ that is refined is the proposition expressed below that states that the concrete event can only be enabled if the abstract event is enabled. The formula is: $$\forall x, s: A \land I(s) \land J(s) \land H_e(x,s) \Rightarrow G_e(x,s)$$
+
+\begin{itemize}
+	\item $A$ is the set of axioms in the context;
+	\item $I$ and $J$ represent the invariants of the abstract and concrete machine, respectively;
+	\item $H_e$ is the conjunction of all guards of the concrete event and $G_e$ is the conjunction of the guards of the abstract event.
+\end{itemize}
+
+The guard strengthening condition expresses that in any reachable state where the concrete refined event can take place, also the abstract event can take place.
+\end{definition}
+
+
+\begin{definition}
+The \textit{action simulation condition} for an abstract action $a$ of an abstract event $e$ that is being refined is the proposition that states that this action $a$ "simulates" the concrete actions of the refined $e$. The formula is: $$\forall x, s, s': A \land I(s) \land J(s) \land H_e(x,s) \land T_e(x,s,s') \Rightarrow Q_a(x,s,s')$$
+
+\begin{itemize}
+	\item $A$ is the set of axioms in the context;
+	\item $I$ and $J$ represent the invariants of the abstract and concrete machine, respectively;
+	\item $H_e$ is the conjunction of all guards of the concrete event ;
+	\item $T_e$ is the bistate formula expressing the effects of the concrete event refining $e$;
+	\item $Q_a$ is the bistate formula expressing the effects of the abstract action $a$.
+\end{itemize}
+
+$T_e$ is called the \textit{before-after} predicate of the concrete event and $Q_a$ that of the abstract action $a$. This action simulation condition takes care that the event’s abstract behaviour is not contradicted by its concrete behaviour.
+\end{definition}
+
+
+\paragraph{Correctness properties}
+
+\begin{definition}
+Correctness property 1: each path/linear time model of $M_{i+1}$ abstracts into a path/linear time model of $M_{i}$. \\
+
+This property ensures that each behaviour at the concrete level $i + 1$ matches a behaviour at
+the level $i$.
+\end{definition}
+
+\begin{definition}
+Correctness property 2: each path/linear time model of $M_{i}$ is the abstraction of a path/linear time model of $M_{i + 1}$. \\
+
+This property ensures that each behaviour at the abstract level remains possible at the concrete level. This property is not entailed by the refinements steps that we saw. Hence, not every behaviour of the abstract machine is possible at the refined machine. Some behaviors get “lost”. Sometimes this is desirable. Other times it is an indication of a bug.
+\end{definition}
+
+So far in this course, descriptions of dynamic systems were on an abstract level (with exception of LogicBlox theories, which specify concrete executable processes). Abstraction is good. But to be practically useful, we need a way to link abstract descriptions to more concrete “executable” ones. Refinement is a missing link as it allows to close the gap between abstract specifications and concrete ones.
+
+
+\section{Chapter 7}
+
+\subsection{Deductive inference}
+
+\begin{definition}
+A proof system consists of a set of \textit{logical axioms} and \textit{inference rules}.
+\end{definition}
+
+\begin{definition}
+An axiom schemata is an abstract formula containing formula variables. It represents the set of all formulas that can be obtained by substituting formula variables by formulas. E.g. $\alpha \lor \lnot\alpha$, an instance of this schemata would be $P \lor \lnot P$.
+\end{definition}
+
+The inference rule $\frac{\beta_1, \dots,\beta_n}{\alpha}$ specify that formula $\alpha$ can be inferred from formulas $\beta_1, \dots,\beta_n$.
+
+\begin{definition}
+Given is a proof system:
+
+\begin{itemize}
+	\item A formula $\varphi$ is \textit{provable} or \textit{derivable} from a FO theory $T$ (denoted $T \vdash \varphi$ if there is a proof of $\varphi$ from $T$.
+	\item A FO theory $T$ is \textit{consistent} if there is no sentence $\varphi$ such that $T \vdash \varphi$ and $T \vdash \lnot\varphi$
+\end{itemize}
+\end{definition}
+
+\begin{definition}
+A proof theory is \textit{sound} if $T \vdash \alpha$ implies $T \models \alpha$.
+\end{definition}
+
+\begin{definition}
+A proof theory is \textit{complete} if $T \models \alpha$ implies $T \vdash \alpha$.
+\end{definition}
+
+If a proof system is sound and complete, then $\vdash$ and $\models$ coincide. I.e., derivability and logical entailment coincide. But also consistency and satisfiability coincide. Proof omitted (See course notes).
+
+\begin{theorem}
+G\"{o}dels Completeness theorem: \textit{For each theory T and for each sentence $\alpha$ in FO, if T $\models \alpha$ then T $\vdash \alpha$}
+\end{theorem}
+
+
+\subsubsection{Compactness theorem of FO}
+
+\begin{theorem}
+Compactness Theorem of FO: \textit{An infinite FO theory $\Psi$ is satisfiable iff each finite subset is satisfiable.}
+\end{theorem}
+
+\begin{proof}
+$(\Rightarrow)$ If $\Psi$ is satisfiable, it has a model which is also a model of all its finite subsets. Hence, each finite subset is satisfiable.\\
+
+$(\Leftarrow)$ Assume towards contradiction that $\Psi$ is not satisfiable\footnote{The proof in this direction uses contraposition. The way the beginning and end of this direction is phrased in the course notes is misleading.}. By G\"{o}dels Completeness theorem, $\Psi$ is inconsistent. By definition then, there exists a formula $\varphi$ and a proof $Pr1$ of $\varphi$ from $\Psi$ and a proof $Pr2$ of $\lnot\varphi$ from $\Psi$. \\
+Let $\Omega = (Pr1 \cup Pr2) \cap \Psi$, the set of formulas of $\Psi$ that are introduced in these proofs. Proofs are finite sequences; hence $\Omega$ is a finite subset of $\Psi$. By construction of $\Omega$ $Pr1$ and $Pr2$ are proofs from $\Omega$, proving respectively $\varphi$ and $\lnot \varphi$. Hence, $\Omega$ is inconsistent. By soundness of $\vdash$, $\Omega$ is unsatisfiable. 
+\end{proof} 
+
+\noindent
+Equivalently, $\Psi$ is unsatisfiable iff at least one finite subset is unsatisfiable. This can be used to prove inexpressivity in FO of propositions.
+
+
+\subsection{Some expressivity limitations of FO}
+
+\paragraph{Basic terminology and notations} For logic formula $\varphi$, $Mod(\varphi)$ denotes the class of models of $\varphi$. For theory $T$, $Mod(T)$ denotes the class of models of $T$. \\
+
+\noindent
+We say that a class $\mathcal{C}$ is inconsistent with $\mathcal{C'}$ if $\mathcal{C} \cap \mathcal{C'} = \emptyset$. We say that $\mathcal{C}$ is inconsistent with a theory or formula $T$ if $\mathcal{C}$ is inconsistent with $Mod(T)$. \\
+
+\noindent
+Simple property: $\mathfrak{A} \models T \cup T'$ iff $\mathfrak{A} \models T$ and $\mathfrak{A} \models T'$ iff $\mathfrak{A} \in Mod(T) \cap Mod(T')$. \\
+
+\noindent
+The classes $\mathcal{C}$ of structures that we consider in this section satisfy two natural conditions:
+
+\begin{itemize}
+	\item $\mathcal{C}$ is closed under isomorphism: if $\mathfrak{A}$ is isomorphic to $\mathfrak{A}'$ then $\mathfrak{A} \in \mathcal{C}$ iff $\mathfrak{A}' \in \mathcal{C}$  
+	\item $\mathcal{C}$ is closed under extension: if $\mathfrak{A} \in \mathcal{C}$ and $\mathfrak{A}'$ extends $\mathfrak{A}$ with an interpretation for additional symbols, then $\mathfrak{A}' \in \mathcal{C}$.
+\end{itemize}
+
+\paragraph{Expressing classes of structures}
+
+\begin{definition}
+\begin{itemize}
+	\item A formula $\varphi$ of logic $\mathcal{L}$ expresses a class $\mathcal{C}$ of structures if $Mod(\varphi) = \mathcal{C}$.
+	\item A theory $T$ of logic $\mathcal{L}$ expresses $\mathcal{C}$ if $Mod(T) = \mathcal{C}$.
+	\item A class $\mathcal{C}$ is finitely expressible in $\mathcal{L}$ if it is expressed by a formula $\varphi$ of $\mathcal{L}$.
+	\item A class $\mathcal{C}$ is expressible in $\mathcal{L}$ if it is expressed by a (possibly infinite) theory $T$ of $\mathcal{L}$.
+\end{itemize}
+\end{definition}
+
+\subsubsection{Inexpressivity theorem}
+
+\begin{theorem}
+\textit{Let $\mathcal{C}$ be a class of structures and let T' be an infinite theory such that:}
+\begin{itemize}
+	\item \textit{T' is inconsistent with $\mathcal{C}$; \\
+	or formally, $\mathcal{C} \cap Mod(T') = \emptyset$;}
+	\item \textit{each finite subset of T' is consistent with $\mathcal{C}$;\\
+	 or formally, $\mathcal{C} \cap Mod(\Omega) \neq \emptyset$, for each finite subset $\Omega \subseteq T'$.}
+\end{itemize}
+\textit{Then $\mathcal{C}$ is not expressible in FO.}
+\end{theorem}
+
+\begin{proof}
+Assume towards contradiction that $\mathcal{C}$ is expressed by FO theory $T$; i.e. $Mod(T) = \mathcal{C}$.\\
+
+It follows that $Mod(T) \cap Mod(T') = \emptyset$, hence $T \cup T'$ is unsatisfiable.\\
+
+By the compactness theorem, $T \cup T'$ has an unsatisfiable finite subset $\Omega \subseteq T \cup T'$.\\
+
+Consider $\Omega' = \Omega \cap T'$. It holds that $\Omega' \subseteq \Omega \subseteq \Omega' \cup T$.\\
+
+On the one hand, $\Omega'$ is a finite subtheory of $T'$, hence $\Omega' \cup T$ is satisfiable (since $Mod(\Omega' \cup T) = Mod(\Omega') \cap \mathcal{C} \neq \emptyset$).\\
+
+On the other hand, $\Omega' \cup T$ is a superset of $\Omega$. Any superset of an unsatisfiable FO theory is unsatisfiable as well, hence $\Omega' \cup T$ is unsatisfiable. Contradiction
+\end{proof}
+
+\paragraph{Finiteness of the universe cannot be expressed}
+\begin{theorem}
+"The universe is finite" \textit{is not expressible in FO.}
+\end{theorem}
+
+\begin{proof}
+This informal proposition characterises the class of structures with a finite universe, which
+we denote $\mathcal{C}_{FinU}$. Consider the class $\mathcal{C}_{InfU}$ of structures with infinite universe. It is expressed by $T_{InfU}$ (See page 192 for this theory. It is the theory with an infinite amount of propositions where proposition $i$ states that there are at least $i$ different elements in the universe.). Let us verify that the conditions of the theorem are satisfied:
+\begin{itemize}
+	\item $\mathcal{C}_{FinU} \cap \mathcal{C}_{InfU} = \emptyset$: obviously.
+	\item Each finite subset $\Omega$ of $T_{InfU}$ is consistent with $\mathcal{C}_{FinU}$ . Indeed, there is a largest number $n$ such that $\Omega$ contains the axiom from $T_{InfU}$ that expresses that the domain contains atleast $n$ elements. Any finite structure with domain size $n$ or more satisfies $\Omega$.
+\end{itemize}
+Application of the inexpressivity theorem yields that $\mathcal{C}_{FinU}$ is not expressible in FO.
+
+\end{proof}
+
+Applications of the inexpressivity theorem for proving inexpressivity of a proposition are frequent exam questions. A valid proof of inexpressivity of some $\Phi$ comprises the definition of the corresponding infinite theory $T'$ and a proof that the conditions on $T'$ and $\mathcal{C}$ are satisfied. If this is missing, there is no valid proof. E.g., to prove inexpressivity of “the universe is finite”, specify $T_{InfU}$ and show that the two conditions of the inexpressivity theorem hold.
+
+\paragraph{Reachability cannot be expressed in FO} 
+
+The proposition “There is no path from A to B in graph G” can be infinitely expressed. See page 195 in the course notes for definition of the theory. Proposition $i$ in this theory says that there is no path of length $i$ between A and B in graph G. This theory is denoted as $T_{ABUncon}$.
+
+\begin{theorem}
+“There is a path from A to B in graph G” \textit{is not expressible in FO}.
+\end{theorem}
+
+\begin{proof}
+The proposition characterises the class of structures $\mathfrak{A}$ interpreting G by a graph with a path from $A^\mathfrak{A}$ to $B^\mathfrak{A}$. We denote this class as $\mathcal{C}_{ABCon}$. This class is inconsistent with $T_{ABUncon}$
+but consistent with each finite subset $\Omega$ of $T_{ABUncon}$. Indeed, let $n$ be the largest path length
+forbidden by $\Omega$. Every structure with a shortest path from $A$ to $B$ that is strictly longer than $n$
+satisfies $\Omega$ and belongs to $\mathcal{C}_{ABCon}$. The inexpressivity theorem applies.
+\end{proof}
+
+\paragraph{The Domain Closure Axiom is inexpressible}
+
+Let $\tau$ be a finite set of constant symbols and function symbols. Let $S_\tau$ be the set of terms over $\tau$. \\
+
+The domain closure axiom of $\tau$ is the informal proposition that each element of the universe is represented by a term of $\tau$ . This proposition is denoted as DCA($\tau$). \\
+
+Recall that the universe (also called domain) of a structure $\mathfrak{A}$ is denoted as $D_\mathfrak{A}$. A structure $\mathfrak{A}$ satisfies DCA($\tau$) iff $$D_\mathfrak{A} = \{t^\mathfrak{A} \mid t \in S_\tau\}$$
+
+Hence, the class $\mathcal{C}_{DCA(\tau)}$ characterized by DCA($\tau$): $$\mathcal{C}_{DCA(\tau)} = \{\mathfrak{A} \mid D_\mathfrak{A} = \{t^\mathfrak{A} \mid t \in S_\tau\}\}$$
+
+\begin{theorem}
+\textit{If $\tau$ contains at least one constant and one function symbol, then DCA($\tau$) is not expressible in FO.}
+\end{theorem}
+
+\begin{proof}
+Consider the infinite theory $T_a = \{ \lnot(a=t) \mid t\in S_\tau\}$. This theory states that $a$ is an object that is different from each term in $S_\tau$. For any model $\mathfrak{A}$ of $T_a$, it holds that $a^\mathfrak{A} \in D_\mathfrak{A} \setminus \{t^\mathfrak{A} \mid t \in S_\tau\}$; such a structure does not satisfy DCA($\tau$ ). Hence, $\mathcal{C_{DCA(\tau)}}$ is inconsistent with $T_a$.\\
+
+However, $\mathcal{C_{DCA(\tau)}}$ is consistent with each finite subset, and even with each strict subset of $T_a$. Indeed, take a Herbrand interpretation $\mathfrak{A}$ of $\tau$. It holds that for any pair of terms $t, s$ over $\tau$ that $t^\mathfrak{A} \neq s^\mathfrak{A}$. Let $\Omega$ be a strict subset of $T_a$. There is at least one term $t \in S_\tau$ such that $\lnot (a = t) \not \in \Omega$. Take the structure $\mathfrak{A}[a : t^\mathfrak{A}]$ that expands $\mathfrak{A}$ by interpreting $a$ as $t^\mathfrak{A}$. For each axiom $\lnot(a=t')\not\in\Omega$, it holds that $t'$ is a different term than $t$ and hence, $a^{\mathfrak{A}[a : t^\mathfrak{A}]} = t^\mathfrak{A} \neq {t'}^\mathfrak{A}$. Hence, $\mathfrak{A}[a : t^\mathfrak{A}]$ satisfies $\Omega$.\\
+
+Applying the inexpressivity theorem now yields the theorem.
+\end{proof}
+
+\subsection{Undecidability and G\"{o}dels incompleteness theorem}
+
+\begin{theorem}
+(Undecidability of FO). \textit{The validity problem for FO is undecidable. That is, the set \{$\alpha \mid \text{ } \models \alpha$\} is undecidable.}
+\end{theorem}
+
+There is no terminating algorithm that for input $\alpha$ answers \textbf{T} if $\models\alpha$ and \textbf{f} otherwise.
+
+
+\begin{proof}
+Proof omitted in the course notes.
+\end{proof}
+
+\begin{theorem}
+(Semi-decidability of FO). \textit{The validity problem for first order logic is semi-decidable. That is, the set \{$\alpha \mid \text{ } \models \alpha$\} is semi-decidable.}
+\end{theorem}
+
+I.e., there is an algorithm that for input $\alpha$ answers \textbf{t} if $\models\alpha$ and otherwise returns \textbf{f} or does not
+terminate. \\
+
+Take note that these two theorems are not mutually exclusive.
+
+\begin{proof}
+We do not give the proof but the basic idea is simple. Take the following algorithm for deciding $\models\alpha$: generate all proofs of some sound and complete proof system and return t if a proof for $\alpha$ is found. If $\alpha$ is valid, a proof exists and will be found and the algorithm will terminated with \textbf{t}. If $\alpha$ is not valid, the algorithm will not terminate. This proves the recursive
+enumerability of \{$\alpha \mid \text{ } \models \alpha$\}.
+\end{proof}
+
+\paragraph{G\"{o}dels incompleteness theorem}
+
+\begin{definition}
+Let $\tau$ be a finite set of symbols.
+
+\begin{itemize}
+	\item A string set $S$ over $\tau$ is \textit{recursive} or \textit{decidable} if there is an algorithm that for given input string $x$ terminates and answers \textbf{t} if $x \in S$ and answers \textbf{f} otherwise.
+	\item A string set $S$ over $\tau$ is \textit{recursively enumerable} if there is an algorithm that outputs every element of S (potentially in infinite time).
+	\item A string set $S$ over $\tau$ is \textit{semi-decidable} if there is an algorithm that for given input string $x$ terminates and answers \textbf{t} if $x \in S$ and answers \textbf{f} or does not terminate if $x\not\in S$.
+\end{itemize}
+\end{definition}
+
+\begin{theorem}
+(G\"{o}dels incompleteness theorem (1931)). \textit{For any recursively enumerable FO theory $T$ that is satisfied in $\mathbb{N}$, there exists an FO sentence $\alpha$ such that $\alpha$ is true in $\mathbb{N}$ but $T \not\models\alpha$}
+\end{theorem}
+
+\begin{corollary} 
+\textit{If $T$ is satisfied by $\mathbb{N}$ and entails all formulas $\varphi$ true in $\mathbb{N}$, then $T$ is not recursively enumerable. In particular, theory($\mathbb{N}$) is not recursively enumerable.}
+\end{corollary}
+
+\begin{theorem}
+\textit{A string set $S$ over $\tau$ is recursively enumerable if and only if $S$ is semi-decidable.}
+\end{theorem}
+
+\begin{proof}
+Proof omitted.
+\end{proof}
+
+
+\begin{corollary} 
+(undecidability of the natural numbers). \textit{ The problem of deciding truth of an FO sentence in $\mathbb{N}$ is undecidable and not semi-decidable.}
+\end{corollary}
+
+This is a direct consequence of G\"{o}dels incompleteness theorem.
+
+\begin{corollary} 
+\textit{ Any extension $\mathcal{L}$ of FO with a finite (or recursively enumerable) theory $T_\mathbb{N}$ of $\mathbb{N}$ that is categorical, does not have a sound and complete proof system.}
+\end{corollary}
+
+\begin{proof}
+Assume towards contradiction that $\mathcal{L}$ has a sound and complete proof system. We build a decision procedure for $\mathbb{N}$ as follows. Take the algorithm that takes as input an FO formula $\varphi$ over $\Sigma_P$ and runs an algorithm that generates all proofs from $T_\mathbb{N}$ in the proof system of $\mathcal{L}$. If $\varphi$ is proven, it returns \textbf{t} and stops; if $\lnot\varphi$ is proven then it returns \textbf{f}. Since either $\mathbb{N} \models \varphi$ or $\mathbb{N} \models \lnot \varphi$, sooner or later one of the two will be proven. Hence, the algorithm terminates with the correct answer. We built a decision procedure for $\mathbb{N}$. Contradiction.
+\end{proof}
+
+So far, we have seen two logics in which we can express the structure of the natural numbers: second order logic (SO) (confer Peano’s theory with the second order induction axiom) and FO(.) in which the induction axiom can be expressed as well. They have no sound and complete proof system.
+
+
+\section{Chapter 8}
+
+\subsection{Overview of inference problems}
+
+Illustrated with examples from the course notes.
+
+\begin{enumerate}
+	\item Propagation inference: 
+		\begin{itemize}
+			\item Input: $T_c,  \text{partial structure } \mathcal{I}$
+			\item Output: $\mathcal{I}'$ where $\mathcal{I} \leq_p \mathcal{I}'$ and for every model $\mathfrak{A}$ of $T_c$ such that $\mathcal{I} \leq_p\mathfrak{A}$, it holds that $\mathcal{I}' \leq_p \mathfrak{A}$. 
+		\end{itemize}
+		A special form of this inference is optimal propagation, where the result $\mathcal{I}'$ is the most precise partial structure such that every model $\mathfrak{A}$ of $T_c$ expanding $\mathcal{I}$ also expands $\mathcal{I}'$.\\
+	
+	This is applied every time the user selects a new course. The old structure is expanded with the new choice and the system shows what new restrictions have appeared due to the consequences of that choice.
+	\item Model checking inference: 			\begin{itemize}
+			\item Input: $T_c, \mathfrak{A}$
+			\item Output: whether or not $\mathfrak{A} \models T_c$
+		\end{itemize}
+		
+	The user can make the system check the current structure and see if it is a valid planning of courses.
+	\item Explanation inference: An explanation is a logical argument why an axiom or group of axioms is violated, why a certain choice is forced or impossible.\\
+	
+	Applying this, the user can see why some planning is not valid.	
+	\item Model expansion inference:
+		\begin{itemize}
+			\item Input: $T_c, \mathcal{I}$
+			\item Output: a model $\mathfrak{A}$ of $T_c$ such that $\mathcal{I} \leq_p \mathfrak{A}$. 
+		\end{itemize}
+		
+	The user can let the system decide on courses if they do not have a preference.
+	\item Optimisation inference:
+		\begin{itemize}
+			\item Input: $T_c, \mathcal{I},t$ where $t$ is a numerical term
+			\item Output: a model $\mathfrak{A}$ of $T_c$ such that $\mathcal{I} \leq_p \mathfrak{A}$ and $t^\mathfrak{A}$ is minimal. 
+		\end{itemize}
+		
+	The user can use this to compute the model expansion with the minimal study load.
+	\item Query answering: 
+		\begin{itemize}
+			\item Input: $\mathfrak{A}, \varphi$ or $\{x : \varphi[x]\}$
+			\item Output: $\mathfrak{A} \models \varphi$ or $\{x : \varphi[x]\}^\mathfrak{A}$
+		\end{itemize}			
+	
+	\item $\Delta$-model expansion: 
+		\begin{itemize}
+			\item Input: a $Param(\Delta)\text{-structure } \mathfrak{A}_p$
+			\item Output: the structure $\mathfrak{A}$ satisfying $\Delta$ expanding $\mathfrak{A}_p$
+		\end{itemize}
+	\item $\Delta$-model revision: The context is that the unique model $\mathfrak{A}$ of definition $\Delta$ for $Param(\Delta)$-structure $\mathfrak{A}_p$ has been computed. Now, the parameter structure $\mathfrak{A}_p$ is updated, by adding or deleting some tuples to the value of predicates in $\mathfrak{A}_p$. The challenge of model revision is to update $\mathfrak{A}$ in an incremental way. Indeed, small updates of $\mathfrak{A}_p$ typically cause small updates of $\mathfrak{A}$. Rather than recomputing $\mathfrak{A}$ from scratch, propagate the given update to modify $\mathfrak{A}$.
+\end{enumerate}
+
+\paragraph{Knowledge base paradigm}
+This paradigm separates knowledge representation (information) from the inference tasks (problems) on it. Currently, these two aspects are commonly linked to each other (FO - deductive inference, SQL - query inference, ...). In IDP, these are separate. One only needs to update the  main theory to enable all sorts of inferences to be able to reason about the theory. If these were linked, one would need to update the different theories linked with the different inferences. This enables high reuse of the theory. Problems that require multiple different forms of inference working together can be solved like this.
+
+
+\section{Chapter 9}
+
+\subsection{Proving satisfiability of Propositional Logic}
+\begin{definition}
+\begin{itemize}
+	\item A \textit{literal} is an atom $p$ or the negation of an atom $\lnot p$.
+	\item A formula is in \textit{negation normal form} (NNF) if it only contains $\land, \lor, \lnot$ and the negation symbol $\lnot$ only occurs in literals.
+	\item A \textit{clause} is a disjunction of literals.
+	\item A formula is in \textit{conjunction normal form} (CNF) if it is a conjunction of clauses.
+\end{itemize}
+\end{definition}
+
+\begin{theorem}
+\textit{A clause is valid iff it contains two complementary literals.}
+\end{theorem}
+
+\begin{proof}
+If a clause has no complementary literals, it is false in the structure making each disjunct false. If a clause has complementary literals $p$ and $\lnot p$, then in every structure, one of the complementary disjuncts is true.
+\end{proof}
+
+\begin{theorem}
+\textit{A conjunction is valid iff each of its conjuncts is valid.}
+\end{theorem}
+
+\begin{proof}
+If $\varphi_1 \land \dots \land \varphi_n$ is true in a structure, then every conjunct is true in that structure. Hence, $\varphi_1 \land \dots \land \varphi_n$ is true in every structure, each conjunct is true in every structure. Vice versa, if every conjunct is true in a structure, then the conjunction is true in the structure. Hence if every conjunct is valid, the conjunction is valid.
+\end{proof}
+
+\begin{theorem}
+\textit{The problem of deciding validity of a CNF formula has linear complexity in the size of the formula.}
+\end{theorem}
+
+\begin{proof}
+The algorithm is to run linearly over $\varphi$ and verify for each clause of $\varphi$ whether it contains complementary literals.
+\end{proof}
+
+\paragraph{The conversion algorithm \textit{ToCNF}} The algorithm consists of four successive rewrite phases; in each phase, one or more well-known equivalences are applied as left to right rewrite rules until no rule applies anymore:
+
+\begin{enumerate}
+	\item $(\psi \iff \phi) \iff (\psi \Rightarrow \phi) \land (\phi \Rightarrow \psi)$
+	\item $(\psi \Rightarrow \phi) \iff (\lnot\psi\lor\phi)$
+	\item $\lnot\lnot\psi\iff\psi$ \\
+	$\lnot(\psi\land\phi)\iff(\lnot\psi\lor\lnot\phi)$ \\
+	$\lnot(\psi\lor\phi)\iff(\lnot\psi\land\lnot\phi)$\\
+	After this step, we obtain formulas in NNF.
+	\item $(\psi\land\phi)\lor\delta\iff(\psi\lor\delta)\land(\phi\lor\delta)$
+\end{enumerate}
+
+We denote the result of applying this algorithm on $\varphi$ as $ToCNF(\varphi)$. Step 1 and 4 create two copies of subformulas. Hence, they may double the size of the formula. In the worst case, the formula is blown up exponentially.
+
+\paragraph{The Tseitin transformation}
+
+We now introduce the Tseitin transformation, a linear algorithm for transforming a PC formula $\varphi$ to CNF. It implements a simple idea, namely to replace subformulas $\psi$ by new symbols $p_\psi$ and express the logical connection between formulas $\psi$ and its components by an equivalence $p_\psi \iff \dots$. In a final step, all equivalences are transformed to CNF by applying the procedure $ToCNF$.\\
+
+Formally, we introduce for each non-literal formula $\psi$ a new propositional symbol $p_\psi$. For each
+non-literal formula $\psi$, define $\psi'$ to be the formula obtained from $\psi$ by replacing its component formulas $\alpha$ by $p_\alpha$. E.g., $(\lnot\alpha)'$ is $\lnot p_\alpha$, $(\alpha\land\beta)'$ is $p_\alpha \land p_\beta$, etc. Finally define $Tseitin(\varphi)$ as the
+clausal theory: $$\{p_\varphi, ToCNF(p_\psi\iff\psi') \mid \psi \text{ is }\varphi \text{ or a non-literal subformula of }\varphi\}$$
+
+
+\begin{theorem}
+\textit{The Tseitin transformation has linear complexity. It preserves satisfiability. Every models of $\varphi$ can be extended in a unique way to a model of $Tseitin(\varphi)$ and vice versa, each model of $Tseitin(\varphi)$ is a model of $\varphi$.}
+\end{theorem}
+
+\begin{proof}
+(sketchy) The Tseitin transformation can be implemented by traversing the parse tree of input $\varphi$ in one linear pass. While $ToCNF$ is exponential in general, here it is applied only to formulas with at most two connectives. Hence, the size of $ToCNF(p_\psi \iff \psi')$ is bounded. The size of the transformation is linear in the size of $\varphi$. \\
+
+The correctness of the algorithm is based on the following observation. Let $\varphi$ be a formula with strict subformula $\psi$. Let $p_\psi$ be a symbol not occurring in $\varphi$. Let  $\varphi'$ be the formula obtained from $\varphi$ by substituting the occurrence $\psi$ by $p_\psi$. Then each model $\mathfrak{A}$ of $\varphi$ can be expanded in a unique way with an interpretation of $p_\psi$ to a model of $\varphi' \land (p_\psi \iff \psi$). Indeed, the unique extension is $\mathfrak{A}[p_\psi : \psi^\mathfrak{A}]$. Vice versa, it is easy to see that each model of $\varphi' \land (p_\psi \iff\psi)$ is a model of $\varphi$.
+\end{proof}
+
+While the semantical correspondence of $\varphi$ and $Tseitin(\varphi)$ is strong, the transformation does not preserve validity. This is because it introduces symbols that are not constrained by $\varphi$, but are constrained by $Tseitin(\varphi)$. In particular, the basic rewrite step introduces a conjunct $p_\psi\iff\psi$ which is not valid. For example, take any structure interpreting $\psi$ and expand it as $\mathfrak{A}[p_\psi : (\lnot\psi)^\mathfrak{A})]$. In this structure, the equivalence is not satisfied. It follows that the Tseitin transformation cannot be used in proving validity of $\varphi$. However, it can be used for satisfiability checking and model generation inference on $\varphi$.
+
+\subsection{SAT algorithms}
+
+\subsubsection{DPLL: a basic SAT solver}
+
+\begin{definition}
+A partial structure $\mathcal{I}$ for (propositional) vocabulary $\Sigma$ is a function from $\Sigma$ to \{\textbf{t}, \textbf{f}, \textbf{u}\}. We call \textbf{u} “undefined”. \\
+
+A clause $C$ is a \textit{conflict clause} with respect to $\mathcal{I}$ if every literal in $C$ is false.\\
+
+A clause $C$ is a \textit{unit clause} w.r.t. $\mathcal{I}$ if every literal is false except one literal $L$ that is undefined. This literal is called the \textit{unit literal}.
+\end{definition}
+
+Partial structures arise in SAT algorithms in intermediate states, when some propositional symbols were assigned a value and others not yet. When during a run of a SAT algorithm on a CNF formula $\varphi$, a partial structure $\mathfrak{A}$ is constructed such that some of the clauses $C$ of $\varphi$ is a conflict clause, the current $\mathfrak{A}$ cannot be expanded to a model of $\varphi$. In this case, backtracking will occur. Likewise, if some clause is a unit clause with unit literal $L$, then in all models expanding $\mathfrak{A}$, $L$ will be true. In this case, DPLL will \textit{propagate} $L$. That is, it will expand $\mathfrak{A}$ so that $L$ is true.
+
+\paragraph{Unit propagation} A unit propagation in the context of a partial structure $\mathfrak{A}$ is the operation of expanding $\mathfrak{A}$ to make a unit literal true. A unit propagation may cause other clauses to become unit clause and hence, may lead to a cascade of unit propagations. This propagation process is implemented by the procedure UP (“Unit Propagation”). If a run of UP assigns values to $n$ variables, this means that $2^n - 1$ possible assignments to these variables are cut from the search space.
+
+\begin{algorithm}
+\caption{Unit Propagation}
+\begin{algorithmic}[1]
+\Procedure{UP}{$\mathcal{I}$}       
+    \While{there exists a unit clause with unit literal $L$}
+        \State $\mathfrak{A}(L) \coloneqq \textbf{t}$ 
+        \If{there exists a conflict clause}
+        \State \textbf{return} "Conflict" 
+        \EndIf
+    \EndWhile
+    \State \textbf{return}
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\paragraph{The DPLL algorithm} A high level description of DPLL is given. The procedure uses the following subroutines:
+
+\begin{itemize}
+	\item \textbf{Decide}: choose a literal $L$ that is undefined in $\Pi$ and set it to true: $\mathcal{I}(L) \coloneqq \textbf{t}$. $L$ is called a \textit{decision literal} or \textit{choice literal}.
+	\item \textbf{Backtrack}: if there is no decision literal, return "Unsat". Otherwise, return to the most recent decision literal L that is true in the current partial structure and set it to false: $\mathcal{I}(L) \coloneqq \textbf{f}$.
+\end{itemize}
+
+\begin{algorithm}
+\caption{DPLL}
+\begin{algorithmic}[1]
+\Procedure{DPLL}{$\varphi$}
+	\State $\mathcal{I}(P) \coloneqq \textbf{u}, \text{for all P in } \varphi$ 
+    \While{true}
+        \State UP
+        \If{"Conflict"}
+        \State Backtrack
+        \ElsIf{$\mathcal{I}$ is a model}
+        \State \textbf{return} $\mathcal{I}$
+        \Else 
+        \State Decide
+        \EndIf
+    \EndWhile
+    \State \textbf{return}
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\paragraph{Analysis of DPLL} At any point of time, the state of DPLL can be represented as a sequence of labeled literals: $$\langle L_0^{\kappa_0} L_1^{\kappa_1} \dots L_n^{\kappa_n} \rangle$$
+which represents the order in which the literals $L_i$ were made true. Each literal $L_i$  is derived by
+decision or by unit propagation. The label $\kappa_i$  of $L_i$ 
+is either ”Decision” or the unit clause $C$ that derived $L_i$. \\
+
+The \textit{time} of literal $L_i$ in this state is $i$. The \textit{level} of literal $L_i$ in this state is the number of decision literals in the sequence up to $i$. All unit literals have the same level as the decision literal from which they were derived. Unassigned literals do not have a time or a level.\\
+
+When during DPLL at level $> 0$ a conflict clause arises, it contains at least two (false) literals of the last level. Otherwise, the clause would have been a conflict clause or a unit clause at a previous level. \\
+
+When a unit literal $L$ was derived at the current level $> 0$, it was by a unit clause with at least 2 literals of the same level: namely $L$ which is true and at least one literal that is false. Otherwise, this clause would have been a unit clause at a previous level. Notice that clauses of length 1 are unit clauses of level 0. \\
+
+A disadvantage of DPLL is that it does not learn; it may make choices for a group of variables that lead to failure, and after backtracking to older levels, it may keep repeating the same bad choices for these variables over and over again.
+
+\subsubsection{Conflict-Driven Clause learning (CDCL)}
+
+See course notes for illustrative examples coupled with the explanation.
+
+\begin{definition}
+The resolution of two clauses $\psi = p \lor L_1 \lor \dots \lor L_n$ and $\phi = \lnot p \lor L_1' \lor \dots \lor L_m'$ on p is the \textit{resolvent} $\delta = L_1 \lor \dots \lor L_n \lor L_1' \lor \dots \lor L_m'$.
+\end{definition}
+
+Adding resolvents of clauses of a CNF theory to the theory preserves equivalence and has no impact on the set of computed models. However, it may improve considerably the efficiency of the DPLL algorithm.\\
+
+In the Conflict-driven clause learning algorithm (CDCL), resolvents are constructed that directly aid the solving process. They cut away potentially large parts of the search space by allowing deep backtracking. When a conflict clause arises, resolution is applied to construct a clause that gives the “reason” for the conflict. This clause is called the learned clause, and allows to perform backjumping, i.e. to backtrack over multiple levels. This may cut away exponential parts of the search tree. Moreover, the clause is stored to avoid that a failed assignment is repeated.
+
+\paragraph{First resolution step} Assume that during execution, a conflict arises due to the conflict clause $L_1 \lor \dots \lor L_n$. Recall that all literals have an “age”, which is their time stamp. Assume that the clause is ordered from young to old, in which case $L_1$ is the youngest literal. Recall that the conflict clause contains at least two literals of the current level, which implies that $L_1$ and $L_2$ are of the current level. $L_1$ is not the negation of the decision literal since that literal is the oldest literal of the current level and $L_1$ is younger than $L_2$. Hence, $L_1$ is a unit literal. \\
+
+$L_1$ is the negation of a unit literal $\lnot L_1$ of the current level that was derived by a unit clause $\lnot L_1 \lor L_2' \lor \dots \lor L_m'$. CDCL performs resolution on the conflict clause and the unit clause on $L_1$ and removes doubles. The result is a new clause which we denote as $L_1" \lor \dots \lor L_k"$. Again, we assume that literals are ordered from young to old. Below, this operation is called: \textbf{ResolveYoungest}. \\
+
+Since $\lnot L_1$ was the only true literal in both clauses and was resolved away, this resolution step produces again a conflict clause. Notice, since the conflict clause contained at least two false literals of the current level, the returned conflict clause still contains at least one false literal of the current level. In particular, the youngest literal $L_1"$ is of the current level. \\
+
+In general, \textit{ResolveYoungest} can be applied to an arbitrary conflict clause $L_1 \lor \dots$ with a literal $L_1$ of the current level, provided this literal is the negation of a unit literal. In that case, $\lnot L_1$ was derived by a unit clause $\lnot L_1 \lor K_2 \lor \dots$ Again, resolution is possible. As we observed before, the unit clause $\lnot L_1 \lor K_2 \lor \dots$ contains at least two literals of the current level. It follows that the resolvent contains at least one false literal of the current level: $K_2$ and there may be more of them. Hence, an invariant of iterated application of \textit{ResolveYoungest} is that the produced clauses are conflict clauses with the youngest literal of the current level.\\
+
+This process may come to an end when a conflict clause is produced in which the only and youngest literal is the negation of the decision literal of the current level. The decision literal of the current level has no unit clause and cannot be resolved away.\\
+
+Thus, \textit{ResolveYoungest} can be iterated until the only literal of the current level is the negation of the decision level. However, CDCL does something smarter. It iterates \textit{ResolveYoungest} until a conflict clause is obtained with exactly one literal of the current level. This clause is called the \textit{learned clause} or the \textit{Unique Implication Point} (UIP). The procedure to compute it is called \textbf{ClauseLearning}. \\
+
+\begin{algorithm}
+\caption{Clause Learning}
+\begin{algorithmic}[1]
+\Procedure{ClauseLearning}{ConflictClause}
+    \While{ConflictClause contains $\geq 2$ literals of current level}
+        \State ConflictClause = ResolveYoungest(ConflictClaus)
+    \EndWhile
+    \State \textbf{return} ConflictClause
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+All clauses computed during the process are entailed by the theory and are conflict clauses in the current assignment (all literals are false). \\
+
+At each step, we eliminate the youngest literal of the formula and replace it by older ones, hence the youngest literal in the conflict clause becomes strictly older. This cannot go on forever, hence this algorithm terminates. \\
+
+The output of clause learning is a clause $L_1 \lor \dots \lor L_k$ with one literal $L_1$ of the current level and all other literals of older levels. This is the learned clause (the UIP). What to do with this clause? There are two uses. First, it is added to the clause database, to avoid that later executions repeat the erroneous derivation. Second, it is used for backjumping, as explained next.
+
+\paragraph{Backjumping: non-chronological backtracking} Suppose the learned clause is (ordered in age from young to old): $$L_1 \lor L_2 \dots \lor L_k(k\geq 1)$$
+
+$L_1$ is the youngest, of the current level $n$; $L_2$ is the second youngest, of level $m < n$. At the current level $n$, this is a conflict clause. \\
+
+CDCL performs a special sort of backtracking to the level $m$ of $L_2$. Backtracking to level $m$ $(0 \leq m < n)$ means: undoing all assignments to variables of level $m+1, m+2, \dots,  n$. In contrast to normal backtracking, all assignments at level $m$ are kept.
+
+Since all literals of the UIP except one are of level $m$ or older, $m$ is the oldest level where the learned clause is a unit clause with unit literal $L_1$. After undoing all assignments of levels $m + 1, m + 2, \dots, n$, backtracking proceeds by restarting the unit propagation process at level $m$ with the learned clause as new unit clause. After the call to this procedure, UP is called again, as in DPLL.
+
+\begin{algorithm}
+\caption{Backjumping}
+\begin{algorithmic}[1]
+\Procedure{Backjump}{LearnedClause}
+
+    \State Determine $m$ from LearnedClause
+    \State Undo all assignments to literals of level $m+1,m+2,\dots,n$
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+Why is it so good to stop at the first UIP? After all, we could continue the iteration of \textbf{ResolveYoungest}. Each conflict clause with one literal of the current level computed by iterating \textbf{ResolveYoungest} is a candidate clause for backjumping. If we iterate all the way, we obtain a conflict clause with only one literal of the current level, namely the decision literal. Also this
+clause can be used for backjumping. \\
+
+It is easy to see that it is best to stop with the UIP. Indeed, during iteration of \textbf{ResolveYoungest}, literals of lower level are not resolved away. Hence, the set of them grows with each resolution step. This has two disadvantages. First, longer clauses do not propagate as often as short clauses. Second and probably worse, after the UIP was obtained, later resolution steps might introduce literals of a more recent level $m'$ than the backtrack level $m$ of the UIP. In this case, backjumping is less deep than with the UIP, to level $m'$ rather than to level $m$. See course notes for an illustrative example. \\
+
+\paragraph{When does CDCL stop?} CDCL stops after finding a model or when it discovers unsatisfiability. The latter occurs when it backtracks to level $m = 0$ and subsequent UP computes a conflict clause. In that case, CDCL returns Unsat, just like DPLL.
+
+\paragraph{Computing multiple models} To adapt CDCL to generate multiple models, the standard technique is as follows. When a model $\mathfrak{A}$ is found, a clause is derived that forbids this model. One such a clause is $\lor_{L\in\mathfrak{A}}\lnot L$, the disjunction of negations of true literals of $\mathfrak{A}$. A shorter and hence better clause is to include only the negation of the decision literals of $\mathfrak{A}$. We denote this clause as NoModel($\mathfrak{A}$).
+
+\begin{algorithm}
+\caption{Conflict-driven clause learning}
+\begin{algorithmic}[1]
+\Procedure{CDCL}{$\varphi$} \Comment{prints all models; UNSAT if list is empty}
+    \State Initialize $\mathcal{I}(P) \leftarrow \textbf{u}$, for all $P \in \Sigma$
+    \While{true}
+    	\State UP
+    	\If{$\mathcal{I}$ is a model}
+    		\State Print $\mathcal{I}$
+    		\State ConflictClause $\coloneqq$ NoModel($\mathfrak{A}$)
+    		\State Conflict $\coloneqq$ true
+    		\State Add ConflictClause to Clause database
+    	\EndIf
+    	\If{conflict and current level is 0}
+    	\State \textbf{return} "Unsat"
+    	\EndIf
+    	\If{conflict and current level $>$ 0}
+    	\State LearnedClause $\coloneqq$ ClauseLearning(ConflictClause)
+    	\State Backjump(LearnedClause)
+    	\Else \Comment{no conflict and there are undefined symbols}
+    	\State Decide
+    	\EndIf
+    \EndWhile
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+
+\subsubsection{Optimisations}
+
+See course notes for optimisations
+
+
+\section{Chapter 10}
+
+\subsection{CTL-model checking algorithm}
+
+In this section, we see an algorithm for solving the CTL model checking problem:
+\begin{itemize}
+	\item Input: a transition structure $\mathcal{M} = \langle S,\rightarrow,L \rangle$, a state $s_0 \in S$, a CTL formula $\phi$;
+	\item Output: ($\mathcal{M}, s_0 \models \phi$) (true if it holds, false otherwise)
+\end{itemize}
+
+Instead, we solve a related problem:
+\begin{itemize}
+	\item Input: $\mathcal{M}$, a CTL formula $\phi$
+	\item Output: $\{s \in S \mid \mathcal{M}, s \models \phi\}$. We denote this set as $S_\phi$.
+\end{itemize}
+
+The output of the second problem consists of all states $s \in S$ in which the CTL state formula $\phi$ is satisfied. Clearly, the model checking problem can be reduced to the second sort of problem. The algorithm presented below solves both sorts of problems.
+
+\paragraph{Adequate set}  The CTL formulas supported by the algorithm are the formulas build from the the adequate set $\{\text{EG,EU,EX}, \land, \lnot, \bot\}$.
+
+\begin{proposition}
+\begin{itemize}
+	\item $\mathcal{M}, s \models p \iff p \in L(s)$
+	\item $\mathcal{M}, s \models \psi_1 \land \psi_2 \iff \mathcal{M}, s \models \psi_1 \land \mathcal{M}, s \models \psi_2$
+	\item $\mathcal{M}, s \models \lnot \psi_1 \iff \mathcal{M}, s \not\models \psi_1$
+	\item $\mathcal{M}, s \models \text{EX} \psi_1 \text{ if there exists $s \rightarrow s'$ such that } \mathcal{M}, s' \models \psi_1$
+	\item $\mathcal{M}, s \models \text{E} (\psi_1 \text{U} \psi_2) \text{ iff there exists a finite path $s = s_0 \rightarrow s_1 \rightarrow \dots \rightarrow s_n (n \geq 0)$ such that } \mathcal{M}, s_i \models \psi_1$ for every $i \in \{0,\dots,n-1\}$ and $\mathcal{M}, s_n \models \psi_2$.
+	\item $\mathcal{M}, s \models \text{EG} \psi_1 \text{ iff there exists an infinite path $s_0 \rightarrow s_1 \rightarrow \dots$ such that } s = s_0 \text{ and } \mathcal{M}, s_i \models \psi_1$ for every $i \in \mathbb{N}$.
+\end{itemize}
+\end{proposition}
+
+The proposition suggests to compute $\mathcal{M}, s \models \phi$ recursively on the structure of $\phi$. The algorithm computes sets $S_\psi = \{s \in S \mid \mathcal{M}, s \models \psi\}$ recursively, for increasing subformulas $\psi$ of $\phi$. Below, we discuss the steps in the algorithm and their complexity. Let $V$ be the number of states and $E$ the number of edges in $\rightarrow$. We make the following complexity assumptions about operations on datastructures:
+
+\begin{itemize}
+	\item For each $s \in S$, the sets $\{s' \mid s' \rightarrow s\}$ and $\{s' \mid s \rightarrow s'\}$ can be generated in time linear in their size.
+	\item For each $s \in S$ and $p\in\Sigma$, checking $p\in L(s)$ is $O(1)$.
+	\item For each $S_\psi$, checking $s \in S_\psi$ and adding $s$ to $S_\psi$ is $O(1)$.
+\end{itemize}
+
+The algorithm computes $S_\psi$ by a case analysis on $\psi$.
+
+\begin{itemize}
+	\item $\psi = \bot: S_\psi = \emptyset$
+	\item $\psi = p \in \Sigma: S_\psi = \{s \in S \mid p \in L(s)\}$; \\
+	To compute $S_{\psi}$, loop over the elements $s \in S$ and check $p \in L(s)$. $S_p$ can be computed in $O(V)$ since checking $p \in L(s)$ and adding $s$ to $S_{\psi}$ is $O(1)$.
+	\item $\psi = \lnot \psi_1: S_\psi = S \setminus S_{\psi_1}$; \\
+	Loop over the elements $s\in S$; if $s\not\in S_{\psi_1}$, add $s$ to $S_\psi$. This is $O(V)$.
+	\item $\psi = \psi_1\land\psi_2: S_\psi = S_{\psi_1} \cap S_{\psi_2}$; \\
+	Loop over the elements $s\in S$; if $s\in S_{\psi_1}$ and $s\in S_{\psi_2}$, add $s$ to $S_\psi$. This is $O(V)$.
+	\item $\psi = \text{EX}\psi_1: S_\psi = \{s \in S \mid \exists s':s\rightarrow s' \land s' \in S_{\psi_1}\}$; \\
+	Loop over the elements $s'\in S_{\psi_1}$; for every $s\rightarrow s'$, add $s$ to $S_\psi$. This is $O(V+E)$.
+	\item $\psi = \text{E}(\psi_1 \text{U}\psi_2): S_\psi = \{s \in S \mid \exists s_0,\dots,s_n:s = s_0 \rightarrow s_1 \rightarrow \dots \rightarrow s_n \land \forall i \in \{0,\dots,n-1\}: s_i \in S_{\psi_1} \land s_n \in S_{\psi_2}\}$; \\
+	The set $S_\psi$ is computed by the following algorithm. It uses a queue datastructure $Q$ for which pushing and popping an element is $O(1)$.
+	
+\begin{algorithm}
+\begin{algorithmic}[1]
+    \State $S_\psi \coloneqq Q \coloneqq S_{\psi_2}$
+    \While{$Q\neq\emptyset$}
+    	\State pop $s$ from $Q$
+    	\State for every $s'\rightarrow s$, if $s' \in S_{\psi_1}$ add $s'$ to $S_{\psi}$ and to $Q$.
+    \EndWhile
+    \State \textbf{return} $S_\phi$
+\end{algorithmic}
+\end{algorithm}
+
+This algorithm computes $S_\psi$ in $O(V+E)$.
+
+	\item $\psi = \text{EG}\psi_1: S_\psi = \{s \mid \exists \pi = s_0 \rightarrow s_1 \rightarrow \dots : s = s_0 \land \forall i \in \mathbb{N} : s_i \in S_{\psi_1}\}$; \\
+	The set $ S_\psi$ can be computed as follows.
+
+\begin{algorithm}
+\begin{algorithmic}[1]
+    \State $S_\psi \coloneqq S_{\psi_1}$
+    \For{$s\in S_\psi$}
+    	\If{$s$ has no edge $s\rightarrow s'$ such that $s' \in S_\psi$}
+    	\State delete $s$ from $S_\psi$; restart for loop
+    	\EndIf
+    \EndFor
+    \State \textbf{return} $S_\phi$
+\end{algorithmic}
+\end{algorithm}
+
+	Every time an element of $S_\psi$ is deleted, the for loop is restarted. The for loop takes $O(V + E)$ in the worst case. The for loop is restarted potentially $V$ times. Hence, this algorithm runs in $O(V \times (V + E))$.
+\end{itemize}
+
+
+\paragraph{Complexity of the algorithm}
+Assume that $\psi$ has $f$ subformulas. A run is needed over all $f$ subformulas of $\psi$. Each step is at most $O(V \times (V + E))$. It follows that the algorithm has complexity $O(f \times V \times (V + E))$. This algorithm is quadratic in the size of $M$. This is too expensive. Indeed, the size of $M$ tends to be very large.
+
+\paragraph{A more efficient computation of $S_{\text{EG}\psi_1}$} The only non-linear step in the algorithm is for $\text{EG}\psi_1$. Here is an alternative algorithm to compute this set.
+
+\begin{itemize}
+	\item Compute $\mathcal{M}'$ by deleting all states in which $\psi_1$ is false; $$S' = S_{\psi_1}\text{ and }\rightarrow'=\{(s,s') \in {S'}^2 \mid s \rightarrow s'\}$$
+	\item Compute all maximal strongly connected components (SCC’s) of $\rightarrow'$. A strongly connected component of a graph is a set of states such that each state in it is reachable from each other state through that. Strongly connected components of a graph can be computed with Tarjans algorithm in $O(V + E)$.
+	\item Compute $S_{\text{EG}\psi_1}$ as the set of states in $\mathcal{M}'$ that can reach a strongly connected component.
+\end{itemize}
+
+This algorithm computes in $O(V + E)$.\\
+
+In conclusion, the complexity of the refined algorithm is $O(f \times(V +E))$ and is linear in the size of $\mathcal{M}$.
+
+\subsubsection{CTL model checking with fairness}
+
+A fairness constraint $\psi$ is a path constraint that $\psi$ should be true infinitely often. As discussed before, such constraints cannot be expressed in a state transition graph. \\
+
+Some model checking systems support adding explicit fairness constraints to the specification. In that case, the specification of the dynamic system is a pair $\langle \mathcal{M}, \mathcal{C}\rangle$ of a transition structure $\mathcal{M}$ and a set $C$ of fairness constraints. Paths of $\langle \mathcal{M}, \mathcal{C}\rangle$
+are paths of $\mathcal{M}$ that satisfy all fairness constraints $c\in C$.
+
+\begin{definition}
+$c$ is a \textit{simple fairness constraint} if $c$ is a CTL (state) formula.
+\end{definition}
+
+Recall that a state formula is also a path formula. Each state formula $c$ characterises a set $S_c$ of states. A simple fairness constraint $c$ expresses that paths should pass infinitely often through states of $S_c$.
+
+\begin{definition}
+The paths of a system $\langle \mathcal{M}, \mathcal{C}\rangle$ with $C$ a set of simple fairness constraints are all paths of $\mathcal{M}$ that pass infinitely often through states of $S_c$, for every $c \in C$.
+\end{definition}
+
+
+
+
+
+
+
+
+\end{document}
